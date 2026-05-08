@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dentist Management</title>
+<link rel="stylesheet" href="dentist.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<header>
+    <h2>DentaCare Management System</h2>
+    <button onclick="location.href='index.html'">Home</button>
+</header>
+
+<div class="container">
+
+    <!-- Add Dentist -->
+    <div class="card">
+        <h3>Add Dentist</h3>
+
+        <input id="name" placeholder="Full Name">
+        <input id="specialization" placeholder="Specialization (Orthodontist, Surgeon, etc)">
+        <input id="experience" type="number" placeholder="Experience (Years)">
+        <input id="phone" placeholder="Phone Number">
+        <input id="email" type="email" placeholder="Email">
+        <input id="availability" placeholder="Availability (Mon-Fri, 10AM-5PM)">
+
+        <button onclick="addDentist()">Save Dentist</button>
+    </div>
+
+    <!-- Dentist List -->
+    <div class="card">
+        <h3>Dentist List</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Specialization</th>
+                    <th>Experience</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody id="dentistTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+const API_URL = "http://localhost/dentacare/add_dentist.php";
+function addDentist() {
+
+    if(!document.getElementById("name").value){
+        alert("Name is required");
+        return;
+    }
+
+    const dentist = {
+        name: document.getElementById("name").value,
+        specialization: document.getElementById("specialization").value,
+        experience: document.getElementById("experience").value,
+        phone: document.getElementById("phone").value,
+        email: document.getElementById("email").value,
+        availability: document.getElementById("availability").value
+    };
+
+    fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(dentist)
+    })
+    .then(response => {
+        if(response.ok){
+            alert("Dentist Added Successfully");
+            clearForm();
+            loadDentists();
+        } else {
+            alert("Error adding dentist");
+        }
+    });
+}
+
+function loadDentists() {
+    fetch("http://localhost/dentacare/get_dentists.php")
+    .then(res => res.json())
+    .then(data => {
+        let table = document.getElementById("dentistTable");
+        table.innerHTML = "";
+
+        data.forEach(d => {
+    table.innerHTML += `
+        <tr>
+            <td>${d.dentist_id}</td> <td>${d.name}</td>
+            <td>${d.specialization}</td>
+            <td>${d.experience} yrs</td>
+            <td>${d.phone}</td>
+        </tr>
+    `;
+});
+    });
+}
+
+function clearForm(){
+    document.getElementById("name").value = "";
+    document.getElementById("specialization").value = "";
+    document.getElementById("experience").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("availability").value = "";
+}
+
+loadDentists();
+</script>
+
+</body>
+</html>
