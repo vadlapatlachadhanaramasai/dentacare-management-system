@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Patient Management</title>
+<link rel="stylesheet" href="patient.css">
+</head>
+<body>
+
+<header>
+    <h2>DentaCare Management System</h2>
+    <button onclick="location.href='index.html'">Home</button>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h3>Add Patient</h3>
+        <input id="name" placeholder="Full Name">
+        <input id="age" type="number" placeholder="Age">
+        <select id="gender">
+            <option value="">Select Gender</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+        </select>
+        <input id="phone" placeholder="Phone Number">
+        <input id="email" type="email" placeholder="Email">
+        <select id="bloodGroup">
+            <option value="">Blood Group</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+        </select>
+        <textarea id="address" placeholder="Address"></textarea>
+        <textarea id="medicalHistory" placeholder="Medical History"></textarea>
+        <button onclick="addPatient()">Save Patient</button>
+    </div>
+
+    <div class="card">
+        <h3>Patient List</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Phone</th><th>Blood Group</th>
+                </tr>
+            </thead>
+            <tbody id="patientTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+function addPatient() {
+    if(!document.getElementById("name").value){
+        alert("Name is required");
+        return;
+    }
+    const patient = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        gender: document.getElementById("gender").value,
+        phone: document.getElementById("phone").value,
+        email: document.getElementById("email").value,
+        bloodGroup: document.getElementById("bloodGroup").value,
+        address: document.getElementById("address").value,
+        medicalHistory: document.getElementById("medicalHistory").value
+    };
+    fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(patient)
+    })
+    .then(response => {
+        if(response.ok){
+            alert("Patient Added Successfully");
+            clearForm();
+            loadPatients();
+        }
+    });
+}
+// Change the URL to your local PHP file
+const API_URL = "http://localhost/dentacare/add_patient.php"; 
+const LOAD_URL = "http://localhost/dentacare/get_patients.php"; 
+
+function loadPatients() {
+    fetch(LOAD_URL) // Use the new load URL
+    .then(res => res.json())
+    .then(data => {
+        let table = document.getElementById("patientTable");
+        table.innerHTML = "";
+        data.forEach(p => {
+            // Ensure the keys match your SQL column names (patient_id, name, etc.)
+            table.innerHTML += `
+                <tr>
+                    <td>${p.patient_id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.age}</td>
+                    <td>${p.gender}</td>
+                    <td>${p.phone}</td>
+                    <td>${p.blood_group}</td>
+                </tr>`;
+        });
+    });
+}
+function clearForm(){
+    document.getElementById("name").value = "";
+    document.getElementById("age").value = "";
+    document.getElementById("gender").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("bloodGroup").value = "";
+    document.getElementById("address").value = "";
+    document.getElementById("medicalHistory").value = "";
+}
+loadPatients();
+</script>
+</body>
+</html>
