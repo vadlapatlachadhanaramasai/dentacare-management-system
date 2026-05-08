@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Appointment Management</title>
+    <link rel="stylesheet" href="appointment.css">
+</head>
+<body>
+
+<header>
+    <h2>DentaCare Management System</h2>
+    <button onclick="location.href='index.html'">Home</button>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h3>Book Appointment</h3>
+        <div class="form-grid">
+            <select id="patientSelect"><option value="">Select Patient</option></select>
+            <select id="dentistSelect"><option value="">Select Dentist</option></select>
+            <input type="date" id="date">
+            <input type="time" id="time">
+            <input id="reason" placeholder="Reason for Visit">
+        </div>
+        <button onclick="addAppointment()">Save Appointment</button>
+    </div>
+
+    <div class="card">
+        <h3>Appointment List</h3>
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Patient</th><th>Dentist</th><th>Date</th><th>Time</th></tr>
+            </thead>
+            <tbody id="appointmentTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const PATIENT_API = "get_patients.php";
+const DENTIST_API = "get_dentists.php";
+const ADD_APP_API = "add_appointment.php";
+const GET_APPS_API = "get_appointments.php";
+
+function loadPatients() {
+    fetch(PATIENT_API).then(res => res.json()).then(data => {
+        let select = document.getElementById("patientSelect");
+        select.innerHTML = '<option value="">Select Patient</option>'; 
+        data.forEach(p => {
+            select.innerHTML += `<option value="${p.patient_id}">${p.name}</option>`; // Fixed: patient_id
+        });
+    });
+}
+
+function loadDentists() {
+    fetch(DENTIST_API).then(res => res.json()).then(data => {
+        let select = document.getElementById("dentistSelect");
+        select.innerHTML = '<option value="">Select Dentist</option>';
+        data.forEach(d => {
+            select.innerHTML += `<option value="${d.dentist_id}">${d.name}</option>`; // Fixed: dentist_id
+        });
+    });
+}
+
+function loadAppointments() {
+    fetch(GET_APPS_API).then(res => res.json()).then(data => {
+        let table = document.getElementById("appointmentTable");
+        table.innerHTML = "";
+        data.forEach(app => {
+            table.innerHTML += `<tr>
+                <td>${app.appointment_id}</td>
+                <td>${app.patientName}</td>
+                <td>${app.dentistName}</td>
+                <td>${app.appointment_date}</td>
+                <td>${app.appointment_time}</td>
+            </tr>`;
+        });
+    });
+}
+function addAppointment() {
+    const p_id = document.getElementById("patientSelect").value;
+    const d_id = document.getElementById("dentistSelect").value;
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
+    const reason = document.getElementById("reason").value;
+
+    if(!p_id || !d_id || !date) {
+        alert("Please select a Patient, Dentist, and Date.");
+        return;
+    }
+
+    const appointment = {
+        patientId: p_id,
+        dentistId: d_id,
+        date: date,
+        time: time,
+        reason: reason
+    };
+
+    fetch(ADD_APP_API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(appointment)
+    })
+    .then(response => {
+        // This is the key: if the server has a 500 error, we capture the text error
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if(data.status === "success") {
+            alert("Appointment Booked Successfully!");
+            loadAppointments(); // Refresh the list
+        } else {
+            alert("Database Error: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Full Server Error:", error);
+        alert("The server encountered an error. Check the Console for details.");
+    });
+}
+loadPatients(); loadDentists(); loadAppointments();
+</script>
+</body>
+</html>
