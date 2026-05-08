@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Billing Management</title>
+<link rel="stylesheet" href="billing.css">
+</head>
+<body>
+<header>
+    <h2>DentaCare Management System</h2>
+    <button onclick="location.href='index.html'">Home</button>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h3>Create Bill</h3>
+        <div class="form-grid">
+            <select id="patientSelect"><option value="">Select Patient</option></select>
+            <input type="number" id="consultationFee" placeholder="Consultation Fee" value="0">
+            <input type="number" id="treatmentFee" placeholder="Treatment Fee" value="0">
+            <input type="number" id="medicineFee" placeholder="Medicine Fee" value="0">
+            <input type="number" id="discount" placeholder="Discount" value="0">
+        </div>
+        <input type="number" id="totalAmount" placeholder="Total Amount" readonly>
+        <button onclick="calculateTotal()">Calculate Total</button>
+        <button onclick="addBill()">Save Bill</button>
+    </div>
+
+    <div class="card">
+        <h3>Billing Records</h3>
+        <table>
+            <thead><tr><th>ID</th><th>Patient</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody id="billingTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Use relative paths for Mac/XAMPP stability
+const BILL_API = "add_bill.php";
+const GET_BILLS_API = "get_bills.php";
+const PATIENT_API = "get_patients.php";
+
+// 1. Calculate the total based on inputs
+function calculateTotal() {
+    const con = parseFloat(document.getElementById("consultationFee").value) || 0;
+    const treat = parseFloat(document.getElementById("treatmentFee").value) || 0;
+    const med = parseFloat(document.getElementById("medicineFee").value) || 0;
+    const disc = parseFloat(document.getElementById("discount").value) || 0;
+    
+    const total = (con + treat + med) - disc;
+    document.getElementById("totalAmount").value = total.toFixed(2);
+}
+
+// 2. Load bills into the table
+function loadBills() {
+    fetch(GET_BILLS_API)
+    .then(res => res.json())
+    .then(data => {
+        let table = document.getElementById("billingTable");
+        table.innerHTML = "";
+        data.forEach(b => {
+            table.innerHTML += `
+                <tr>
+                    <td>${b.bill_id}</td>
+                    <td>${b.patientName}</td>
+                    <td>$${b.total_amount}</td>
+                    <td>${b.bill_date}</td>
+                </tr>`;
+        });
+    })
+    .catch(err => console.error("Error loading bills:", err));
+}
+
+function loadPatientsForBilling() {
+    fetch(PATIENT_API)
+    .then(res => res.json())
+    .then(data => {
+        let select = document.getElementById("patientSelect");
+        select.innerHTML = '<option value="">Select Patient</option>';
+        data.forEach(p => {
+            select.innerHTML += `<option value="${p.patient_id}">${p.name}</option>`;
+        });
+    });
+}
+
+function addBill() {
+    const total = document.getElementById("totalAmount").value;
+    if(!total || total <= 0) {
+        alert("Please calculate a valid total first!");
+        return;
+    }
+
+    const bill = {
+        patientId: document.getElementById("patientSelect").value,
+        consultationFee: document.getElementById("consultationFee").value,
+        treatmentFee: document.getElementById("treatmentFee").value,
+        medicineFee: document.getElementById("medicineFee").value,
+        discount: document.getElementById("discount").value,
+        totalAmount: total
+    };
+
+    fetch(BILL_API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(bill)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") { 
+            alert("Bill Saved Successfully!"); 
+            loadBills(); 
+        } else {
+            alert("Error: " + data.message);
+        }
+    });
+}
+
+// Initialize
+loadPatientsForBilling();
+loadBills();
+</script>
+</body>
+</html>
